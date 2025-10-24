@@ -1,11 +1,19 @@
+'use client'
+
 import { Entry } from "@/lib/types"
 import Link from "next/link"
 import Image from "next/image"
-import { Play } from "lucide-react"
+import { Star } from "lucide-react"
+import { toggleFavorites } from "@/store/features/favoritesSlice"
+import { useAppDispatch, useAppSelector } from "@/hooks/redux"
 
 const TrackList = ({ relatedSongs }: { relatedSongs: Entry[] }) => {
-  if (!relatedSongs || relatedSongs.length === 0) return null
 
+
+  const dispatch = useAppDispatch()
+  const favorites = useAppSelector(({ favorites }) => favorites.items)
+
+  if (!relatedSongs || relatedSongs.length === 0) return null
   return (
     <div className="pt-6">
       <h2 className="text-xl font-semibold mb-4">Songs</h2>
@@ -21,6 +29,15 @@ const TrackList = ({ relatedSongs }: { relatedSongs: Entry[] }) => {
           const image = track["im:image"]?.[2]?.label || ""
 
           if (!id) return null
+
+          const isFavorited = (favorites ?? []).some(
+            (fav) => fav?.id?.attributes?.["im:id"] === id
+          )
+
+          const toggleFavorite = (e: React.MouseEvent) => {
+            e.preventDefault()
+            dispatch(toggleFavorites(track))
+          }
 
           return (
             <Link
@@ -58,13 +75,15 @@ const TrackList = ({ relatedSongs }: { relatedSongs: Entry[] }) => {
                 </div>
 
                 <div className="flex items-center gap-3">
+
                   <button
                     type="button"
-                    // onClick={(e) => e.preventDefault()}
-                    aria-label={`Play ${title}`}
-                    className="inline-flex items-center justify-center p-2 rounded-full bg-white/5 hover:bg-white/10 transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-[#fd7f00]"
+                    onClick={toggleFavorite}
+                    aria-label={isFavorited ? `Remove ${title} from favorites` : `Add ${title} to favorites`}
+                    className={`cursor-pointer inline-flex items-center justify-center p-2 rounded-full transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-[#fd7f00] ${isFavorited ? "bg-yellow-400/10 text-yellow-400" : "bg-white/5 text-slate-300 hover:bg-white/10"
+                      }`}
                   >
-                    <Play size={14} />
+                    <Star className={`w-4 h-4 transition ${isFavorited ? "fill-yellow-400 text-yellow-400" : "text-slate-300"}`} />
                   </button>
                 </div>
               </div>

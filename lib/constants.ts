@@ -1,6 +1,6 @@
 export const TITLES = {
   'latest-songs': 'Latest Songs',
-  'artist': 'Artist',
+  'artists': 'Artists',
   'favorites-songs': 'Favorites Songs'
 }
 

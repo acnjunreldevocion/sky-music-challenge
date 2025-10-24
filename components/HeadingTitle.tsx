@@ -1,4 +1,5 @@
-import { slugify } from "@/lib/utils"
+
+import { slugify } from "@/lib/helper"
 import { ChevronRightIcon } from "lucide-react"
 import Link from "next/link"
 

@@ -1,60 +1,62 @@
 
 import AlbumCard from "@/components/AlbumCard";
 import ArtistCard from "@/components/ArtistCard";
+import CardWrapper from "@/components/common/CardWrapper";
+import ScrollContainer from "@/components/common/ScrollContainer";
+import ConnectionError from "@/components/ConnectionError";
+import FavoriteSection from "@/components/FavoriteSection";
 import HeadingTitle from "@/components/HeadingTitle";
-import { Entry } from "@/lib/types";
-import { getLatestSongs, getUniqueArtist } from "@/lib/utils";
+import { getLatestSongs, getUniqueArtist } from "@/lib/helper";
+import { fetchJSON } from "@/lib/services";
+import { TopAlbums } from "@/lib/types";
+
 
 export default async function Home() {
 
-  const result = await fetch('https://itunes.apple.com/us/rss/topalbums/limit=100/json')
-  const albums = await result.json()
+  const apiUrl = process.env.NEXT_PUBLIC_API_URL
 
-  const entry = albums.feed.entry as Entry[]
+  if (!apiUrl) {
+    throw new Error("Missing NEXT_PUBLIC_API_URL in environment variables");
+  }
+  const albums = await fetchJSON<TopAlbums>(apiUrl)
 
-  const latestSongs = getLatestSongs(entry)
-  const artist = getUniqueArtist(entry)
-  const favoritesSongs = getLatestSongs(entry)
+  const entry = albums?.feed.entry
+
+  if (!entry) {
+    return (
+      <ConnectionError />
+    );
+  }
+
+  const sections = [
+    {
+      title: "Latest Songs",
+      data: getLatestSongs(entry),
+      Component: AlbumCard
+    },
+    {
+      title: "Artists",
+      data: getUniqueArtist(entry),
+      Component: ArtistCard
+    },
+  ]
 
   return (
-    <main className="bg-linear-to-r from-[#fd7f00] to-[#000ef5]">
-      <div className="container space-y-4 m-auto px-4 lg:gap-2 lg:px-6 pt-10">
-        <div className="space-y-4">
-          <HeadingTitle title={"Latest Songs"} />
-          <div
-            className="flex gap-4 overflow-x-auto overflow-y-hidden hide-scrollbar pb-2 snap-x snap-mandatory pl-4"
-          >
-            {latestSongs.map((album, idx) => (
-              <div key={idx} className="min-w-[170px] max-w-[170px]">
-                <AlbumCard album={album} />
-              </div>
-            ))}
-          </div>
-        </div>
-        <div className="space-y-4">
-          <HeadingTitle title={"Artist"} />
-          <div
-            className="flex gap-4 overflow-x-auto overflow-y-hidden hide-scrollbar pb-2 snap-x snap-mandatory pl-4"
-          >
-            {artist.map((album, idx) => (
-              <div key={idx} className="min-w-[170px] max-w-[170px]">
-                <ArtistCard key={idx} album={album} />
-              </div>
-            ))}
-          </div>
-        </div>
-        <div className="space-y-4">
-          <HeadingTitle title={"Favorites songs"} />
-          <div
-            className="flex gap-4 overflow-x-auto overflow-y-hidden hide-scrollbar pb-2 snap-x snap-mandatory pl-4"
-          >
-            {favoritesSongs.map((album, idx) => (
-              <div key={idx} className="min-w-[170px] max-w-[170px]">
-                <AlbumCard album={album} />
-              </div>
-            ))}
-          </div>
-        </div>
+    <main className="min-h-screen bg-linear-to-br from-[#fd7f00] via-[#1b1b1b] to-[#000ef5] text-white">
+      <div className="container mx-auto px-4 lg:px-6 py-10 space-y-12">
+        {sections.map(({ title, data, Component }) => (
+          <section key={title} className="space-y-6">
+            <HeadingTitle title={title} />
+            <ScrollContainer>
+              {data.map((album, idx) => (
+                <CardWrapper key={album.id?.attributes?.['im:id'] || idx} idx={idx}>
+                  <Component album={album} />
+                </CardWrapper>
+              ))}
+            </ScrollContainer>
+          </section>
+        ))}
+        <FavoriteSection title="Favorites Songs" />
       </div>
     </main>
   );

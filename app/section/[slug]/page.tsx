@@ -1,26 +1,50 @@
 
-import SectionCard from "@/components/SectionCard"
-import { SectionKey, TITLES } from "@/lib/constants"
-import { Entry } from "@/lib/types"
-import { getLatestSongs, getUniqueArtist } from "@/lib/utils"
+import ClientFavoritesSection from '@/components/ClientFavoriteSection'
+import ConnectionError from '@/components/ConnectionError'
+import SectionCard from '@/components/SectionCard'
+import { SectionKey, TITLES } from '@/lib/constants'
+import { getLatestSongs, getUniqueArtist } from '@/lib/helper'
+import { fetchJSON } from '@/lib/services'
+import { TopAlbums } from '@/lib/types'
 
 export default async function Section({ params }: { params: Promise<{ slug: string }> }) {
 
   const slug = (await params).slug as unknown as SectionKey
-  const result = await fetch('https://itunes.apple.com/us/rss/topalbums/limit=100/json')
-  const albums = await result.json()
-  const entry = albums.feed.entry as Entry[]
+
+  const apiUrl = process.env.NEXT_PUBLIC_API_URL
+
+  if (!apiUrl) {
+    throw new Error('Missing NEXT_PUBLIC_API_URL in environment variables');
+  }
+
+  console.log(slug, 'slug')
+
+  // ✅ Only fetch API for non-favorites pages
+  if (slug === 'favorites-songs') {
+    return <ClientFavoritesSection slug={slug} />
+  }
+
+  const albums = await fetchJSON<TopAlbums>(apiUrl)
+
+  const entry = albums?.feed?.entry
+
+  if (!entry) {
+    return (
+      <ConnectionError />
+    );
+  }
+
 
   let newEntry = getLatestSongs(entry)
-  if (TITLES.artist.includes(slug)) {
+  if (TITLES.artists.includes(slug)) {
     newEntry = getUniqueArtist(entry)
   }
-  if (TITLES["favorites-songs"].includes(slug)) {
+  if (TITLES['favorites-songs'].includes(slug)) {
     newEntry = getLatestSongs(entry)
   }
 
   return (
-    <main className="bg-linear-to-r from-[#fd7f00] to-[#000ef5]">
+    <main className="min-h-screen bg-linear-to-br from-[#fd7f00] via-[#1b1b1b] to-[#000ef5] text-white">
       <div className="container mx-auto px-4 lg:gap-2 lg:px-6 pt-10">
         <div className="p-6">
           <h1 className="font-bold text-3xl text-white pb-6">{TITLES[slug]}</h1>

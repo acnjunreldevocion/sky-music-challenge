@@ -88,3 +88,7 @@ export type Feed = {
   title: Label;
   updated: Label
 }
+
+export type TopAlbums = {
+  feed: Feed
+}

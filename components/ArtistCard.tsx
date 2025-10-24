@@ -1,8 +1,7 @@
-import Image from "next/image"
-import { Entry } from "@/lib/types"
-import { Card, CardContent } from "./ui/card"
-import { format } from "date-fns"
-import Link from "next/link"
+import Image from 'next/image'
+import { Entry } from '@/lib/types'
+import { Card } from './ui/card'
+import Link from 'next/link'
 
 interface ArtistAvatarProps {
   album: Entry
@@ -10,10 +9,10 @@ interface ArtistAvatarProps {
 
 const ArtistCard = ({ album }: ArtistAvatarProps) => {
 
-  const image = album["im:image"]?.[2]?.label
-  const width = album["im:image"]?.[2]?.attributes?.height
-  const title = album["im:name"]?.label
-  const artist = album["im:artist"]?.label
+  const image = album['im:image']?.[2]?.label
+  const width = album['im:image']?.[2]?.attributes?.height
+  const title = album['im:name']?.label
+  const artist = album['im:artist']?.label
   const id = album['id'].attributes['im:id']
   // const price = album["im:price"]?.label
   // const release = format(new Date(album["im:releaseDate"]?.label), "MMMM d, yyyy")
