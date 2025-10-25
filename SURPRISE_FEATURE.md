@@ -1,4 +1,4 @@
-```markdown
+
 # Surprise Feature — Favorites (+ Built-in Advanced Search Behavior)
 
 This project includes a "Favorites" feature and a built-in (non‑Fuse) search implementation used by the SearchBar.
@@ -163,6 +163,7 @@ export default favoritesSlice.reducer
 Built-in search helper (the simple, dependency-free approach used in the app)
 ```ts
 // src/lib/searchHelper.ts
+
 import type { Entry } from '@/lib/types';
 
 export type SearchCategory = 'all' | 'albums' | 'artists' | 'latest';
@@ -173,8 +174,18 @@ export type Suggestion = {
   data: Entry;
 };
 
+export type NormalizeAlbums = {
+  entry: Entry;
+  name: string;
+  artist: string;
+  year: number | string;
+  label: string;
+  id: string;
+  image: string;
+}
+
 export function buildSuggestionsManual(
-  albums: Entry[],
+  albums: NormalizeAlbums[],
   rawQuery: string,
   category: SearchCategory,
   limit = 5
@@ -185,10 +196,10 @@ export function buildSuggestionsManual(
   const currentYear = new Date().getFullYear();
 
   const candidates = albums
-    .filter((album) => {
-      const name = (album['im:name']?.label ?? '').toLowerCase();
-      const artist = (album['im:artist']?.label ?? '').toLowerCase();
-      const year = new Date(album['im:releaseDate']?.label ?? '').getFullYear();
+    .filter((candidate) => {
+      const name = (candidate.name ?? '').toLowerCase();
+      const artist = (candidate.artist ?? '').toLowerCase();
+      const year = new Date(candidate.year ?? '').getFullYear();
 
       switch (category) {
         case 'all':
@@ -205,10 +216,10 @@ export function buildSuggestionsManual(
     })
     .slice(0, limit)
     .map((album) => ({
-      id: album.id?.attributes?.['im:id'] ?? `${Math.random()}`.slice(2),
-      label: `${album['im:name']?.label ?? 'Untitled'} - ${album['im:artist']?.label ?? 'Unknown'}`,
+      id: album.id,
+      label: album.label,
       category,
-      data: album,
+      data: album.entry,
     }));
 
   return candidates;
@@ -267,4 +278,3 @@ test('buildSuggestionsManual finds by name', () => {
 ## Conclusion
 
 This file documents the "Surprise Feature" as implemented: Favorites persisted in Redux + localStorage, and a built-in, dependency-free search used across the app. The implementation is simple, testable, and easy to extend later if you decide to add a fuzzy-search library or server-side sync.
-```

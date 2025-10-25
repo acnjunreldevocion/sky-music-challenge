@@ -9,6 +9,7 @@ import Image from 'next/image';
 import { useDebounce } from '@/hooks/useDebounce';
 import { cn } from '@/lib/utils';
 import type { Entry } from '@/lib/types';
+import { buildSuggestionsManual, NormalizeAlbums } from '@/lib/searchHelper';
 
 type SearchCategory = 'all' | 'albums' | 'artists' | 'latest';
 type Suggestion = {
@@ -56,7 +57,6 @@ export default function SearchBar({
   const listRef = useRef<HTMLUListElement | null>(null);
 
   const debouncedSearch = useDebounce(search, debounceMs);
-  const currentYear = useMemo(() => new Date().getFullYear(), []);
 
   // Normalize once for performance
   const normalizedAlbums = useMemo(() => {
@@ -77,33 +77,12 @@ export default function SearchBar({
     if (!term) return {} as Record<SearchCategory, Suggestion[]>;
 
     return CATEGORIES.reduce((acc, category) => {
-      const filtered = normalizedAlbums
-        .filter((a) => {
-          switch (category) {
-            case 'all':
-              return a.name.includes(term) || a.artist.includes(term) || (a.year === currentYear && (a.name.includes(term) || a.artist.includes(term)));;
-            case 'albums':
-              return a.name.includes(term);
-            case 'artists':
-              return a.artist.includes(term);
-            case 'latest':
-              return a.year === currentYear && (a.name.includes(term) || a.artist.includes(term));
-            default:
-              return false;
-          }
-        })
-        .slice(0, 5)
-        .map((a) => ({
-          id: a.id,
-          label: a.label,
-          category,
-          data: a.entry,
-        }));
+      const filtered = buildSuggestionsManual(normalizedAlbums as unknown as NormalizeAlbums[], term, category)
 
       if (filtered.length) acc[category] = filtered;
       return acc;
     }, {} as Record<SearchCategory, Suggestion[]>);
-  }, [normalizedAlbums, debouncedSearch, currentYear]);
+  }, [debouncedSearch, normalizedAlbums]);
 
   const hasResults = Object.keys(suggestions).length > 0;
   const activeList = suggestions[activeCategory] ?? [];
