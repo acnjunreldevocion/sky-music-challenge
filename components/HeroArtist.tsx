@@ -51,16 +51,6 @@ const HeroArtist = ({ album }: { album?: Entry }) => {
         </div>
 
         <div className="mt-5 flex flex-col sm:flex-row gap-3 w-full sm:w-auto">
-
-          <button
-            type="button"
-            aria-label={`Favorite ${artist}`}
-            className="inline-flex items-center justify-center gap-2 px-4 py-2 rounded-full border border-white/20 text-white bg-white/3 hover:bg-white/6 transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-white/30"
-          >
-            <StarIcon size={16} />
-            Favorites
-          </button>
-
           <Link
             href={`/album/${id}`}
             className="inline-flex items-center justify-center gap-2 px-4 py-2 rounded-full text-sm text-white bg-transparent border border-white/10 hover:bg-white/5 transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-[#fd7f00]"
