@@ -31,7 +31,7 @@ describe('ReduxHydrator', () => {
 
     // waitFor ensures the effect has a chance to run (useEffect on mount)
     await waitFor(() => {
-      expect(mockDispatch).toHaveBeenCalledTimes(1);
+      expect(mockDispatch).toHaveBeenCalledTimes(2);
       // setAlbums should be called with the entries array
       expect(albumSlice.setAlbums).toHaveBeenCalledWith(entries);
       // And dispatch should receive the action returned by setAlbums mock

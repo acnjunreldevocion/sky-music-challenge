@@ -2,7 +2,7 @@
 
 import { useAppSelector } from '@/hooks/redux'
 import { SectionKey, TITLES } from '@/lib/constants'
-import AlbumCard from './album/AlbumCard'
+import { AlbumCard } from '../album'
 
 interface Props {
   slug: string

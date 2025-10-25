@@ -10,6 +10,8 @@ import type { Entry } from '@/lib/types/songs';
 import { buildSuggestionsManual, NormalizeAlbums } from '@/lib';
 import { Input } from '../ui/input';
 import { Button } from '../ui/button';
+import { Popover, PopoverTrigger, PopoverContent } from '../ui/popover';
+import { useRouter } from 'next/navigation';
 
 type SearchCategory = 'all' | 'albums' | 'artists' | 'latest';
 type Suggestion = {
@@ -50,13 +52,14 @@ export default function SearchBar({
   const [search, setSearch] = useState('');
   const [activeCategory, setActiveCategory] = useState<SearchCategory>('all');
   const [showPopover, setShowPopover] = useState(false);
-  const [showCategoryMenu, setShowCategoryMenu] = useState(false);
 
   const containerRef = useRef<HTMLDivElement | null>(null);
   const inputRef = useRef<HTMLInputElement | null>(null);
   const listRef = useRef<HTMLUListElement | null>(null);
 
   const debouncedSearch = useDebounce(search, debounceMs);
+
+  const router = useRouter()
 
   // Normalize once for performance
   const normalizedAlbums = useMemo(() => {
@@ -77,7 +80,7 @@ export default function SearchBar({
     if (!term) return {} as Record<SearchCategory, Suggestion[]>;
 
     return CATEGORIES.reduce((acc, category) => {
-      const filtered = buildSuggestionsManual(normalizedAlbums as unknown as NormalizeAlbums[], term, category)
+      const filtered = buildSuggestionsManual(normalizedAlbums as unknown as NormalizeAlbums[], term, category);
 
       if (filtered.length) acc[category] = filtered;
       return acc;
@@ -92,13 +95,11 @@ export default function SearchBar({
     const handlePointerDown = (e: PointerEvent) => {
       if (containerRef.current && !containerRef.current.contains(e.target as Node)) {
         setShowPopover(false);
-        setShowCategoryMenu(false);
       }
     };
     const handleKey = (e: KeyboardEvent) => {
       if (e.key === 'Escape') {
         setShowPopover(false);
-        setShowCategoryMenu(false);
         inputRef.current?.blur();
       }
     };
@@ -153,7 +154,6 @@ export default function SearchBar({
         first?.focus();
       } else if (e.key === 'Escape') {
         setShowPopover(false);
-        setShowCategoryMenu(false);
       }
     },
     [search, activeCategory, triggerSearch]
@@ -162,7 +162,6 @@ export default function SearchBar({
   // Category menu click
   const handleCategorySelect = (cat: SearchCategory) => {
     setActiveCategory(cat);
-    setShowCategoryMenu(false);
     // If there's a current search, re-trigger search with new category so UI updates
     if (search.trim()) {
       triggerSearch(search, cat);
@@ -211,48 +210,52 @@ export default function SearchBar({
           )}
         </div>
 
-        {/* Filter / category toggle */}
+        {/* Filter / category toggle (converted to shadcn-style Popover) */}
         <div className="relative hidden sm:flex">
-          <Button
-            variant="outline"
-            size="sm"
-            className="px-3 bg-white/5 border-white/10 hover:bg-white/10 flex items-center cursor-pointer"
-            onClick={() => {
-              setShowCategoryMenu((s) => !s);
-              // ensure suggestions visible when opening category menu
-              setShowPopover(true);
+          <Popover
+            onOpenChange={(open) => {
+              // setShowCategoryMenu(open);
+              if (open) setShowPopover(true);
             }}
-            aria-expanded={showCategoryMenu}
-            aria-haspopup="menu"
-            aria-label="Select category"
           >
-            <Filter className="h-4 w-4 mr-2" />
-            <span className="capitalize">{activeCategory}</span>
-          </Button>
+            <PopoverTrigger asChild>
+              <Button
+                variant="outline"
+                size="sm"
+                className="px-3 bg-white/5 border-white/10 hover:bg-white/10 flex items-center cursor-pointer"
+                aria-label="Select category"
+              >
+                <Filter className="h-4 w-4 mr-2" />
+                <span className="capitalize">{activeCategory}</span>
+              </Button>
+            </PopoverTrigger>
 
-          {/* Category dropdown */}
-          {showCategoryMenu && (
-            <div className="absolute right-0 mt-2 w-40 bg-neutral-900 border border-white/10 rounded shadow-lg z-50">
+            <PopoverContent
+              align="end" side="bottom" className="w-40 p-0 bg-neutral-900 border border-white/10 rounded shadow-lg z-50">
               <ul role="menu" className="p-2 space-y-1 text-white">
-                {CATEGORIES.map((cat) => {
-                  return (
-                    <li key={cat} role="none">
-                      <button
-                        role="menuitem"
-                        onClick={() => handleCategorySelect(cat)}
-                        className={cn(
-                          'w-full text-left px-3 py-1.5 rounded hover:bg-white/5 transition cursor-pointer',
-                          cat === activeCategory ? 'bg-white/5 font-medium' : ''
-                        )}
-                      >
-                        <span className="capitalize">{cat}</span>
-                      </button>
-                    </li>
-                  );
-                })}
+                {CATEGORIES.map((cat) => (
+                  <li key={cat} role="none">
+                    <button
+                      role="menuitem"
+                      onClick={(e) => {
+                        e.stopPropagation()
+                        handleCategorySelect(cat);
+                        // setShowCategoryMenu(false)
+                        // setTimeout(() => setShowCategoryMenu(false), 50);
+                      }}
+                      className={cn(
+                        'w-full text-left px-3 py-1.5 rounded hover:bg-white/5 transition cursor-pointer',
+                        cat === activeCategory ? 'bg-white/5 font-medium' : ''
+                      )}
+                    >
+                      <span className="capitalize">{cat}</span>
+                    </button>
+
+                  </li>
+                ))}
               </ul>
-            </div>
-          )}
+            </PopoverContent>
+          </Popover>
         </div>
       </div>
 
@@ -272,7 +275,9 @@ export default function SearchBar({
                 return (
                   <button
                     key={cat}
-                    onClick={() => {
+                    onClick={(e) => {
+                      e.preventDefault()
+                      e.stopPropagation()
                       setActiveCategory(cat);
                       // Keep popover visible
                       setShowPopover(true);
@@ -321,8 +326,15 @@ export default function SearchBar({
                     >
                       <div className="flex items-center gap-3 p-2">
                         <Link
-                          href={`/album/${(id)}`}
+                          role='button'
+                          href="/"
                           className="flex items-center gap-3 flex-1"
+                          onClick={(e) => {
+                            e.preventDefault();
+                            e.stopPropagation()
+                            handleClear()
+                            router.push(`/album/${(id)}`)
+                          }}
                         >
                           {image ? (
                             <Image src={image} alt={title} width={40} height={40} className="rounded-md" />
