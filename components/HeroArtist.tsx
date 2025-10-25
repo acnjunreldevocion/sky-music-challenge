@@ -1,5 +1,5 @@
 import { Entry } from '@/lib/types'
-import { UsersIcon, ExternalLink, StarIcon } from 'lucide-react'
+import { UsersIcon, ExternalLink } from 'lucide-react'
 import Image from 'next/image'
 import Link from 'next/link'
 

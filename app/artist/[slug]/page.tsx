@@ -5,7 +5,6 @@ import HeroArtistAlbums from '@/components/ArtistAlbums'
 import ArtistAbout from '@/components/ArtistAbout'
 import { fetchJSON } from '@/lib/services'
 import ConnectionError from '@/components/ConnectionError'
-import Header from '@/components/Header'
 import ReduxHydrator from '@/provider/ReduxHydrator'
 
 export default async function ArtistPage({ params }: { params: Promise<{ slug: string }> }) {

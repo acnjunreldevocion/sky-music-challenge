@@ -1,7 +1,7 @@
 
 'use client'
 
-import { HouseIcon, SearchIcon } from "lucide-react"
+import { HouseIcon } from "lucide-react"
 import Favorites from "./Favorites"
 import SearchBar from "./SearchBar"
 import Link from "next/link"
