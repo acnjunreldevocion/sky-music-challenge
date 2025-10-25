@@ -26,8 +26,9 @@ const Favorites = () => {
           type="button"
           size="sm"
           className="cursor-pointer flex items-center gap-"
+          aria-label="Favorites"
         >
-          Favorites
+          <span className="hidden sm:flex">Favorites</span>
           <StarIcon size={14} className="text-yellow-200" />
           {(favorites ?? []).length > 0 && (
             <span className="ml-1 text-xs text-gray-300">

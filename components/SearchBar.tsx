@@ -1,14 +1,14 @@
 'use client';
 
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { SearchIcon, X, Filter } from 'lucide-react';
 import { Input } from './ui/input';
 import { Button } from './ui/button';
-import { useState, useEffect, useRef, useMemo } from 'react';
-import { Entry } from '@/lib/types';
+import Link from 'next/link';
+import Image from 'next/image';
 import { useDebounce } from '@/hooks/useDebounce';
 import { cn } from '@/lib/utils';
-import Link from 'next/link';
-import Image from 'next/image'
+import type { Entry } from '@/lib/types';
 
 type SearchCategory = 'all' | 'albums' | 'artists' | 'latest';
 type Suggestion = {
@@ -21,112 +21,209 @@ type Suggestion = {
 interface SearchBarProps {
   albums?: Entry[];
   onSearch?: (term: string, category?: SearchCategory) => void;
+  placeholder?: string;
+  debounceMs?: number;
 }
 
-const categories: SearchCategory[] = ['all', 'albums', 'artists', 'latest'];
+const CATEGORIES: SearchCategory[] = ['all', 'albums', 'artists', 'latest'];
 
-const SearchBar = ({ albums = [], onSearch }: SearchBarProps) => {
+function safeGetReleaseYear(album: Entry): number | null {
+  const dateLabel = album?.['im:releaseDate']?.label;
+  if (!dateLabel) return null;
+  const year = new Date(dateLabel).getFullYear();
+  return Number.isFinite(year) ? year : null;
+}
+
+function makeLabel(album: Entry) {
+  const name = album?.['im:name']?.label ?? 'Unknown';
+  const artist = album?.['im:artist']?.label ?? 'Unknown';
+  return `${name} - ${artist}`;
+}
+
+export default function SearchBar({
+  albums = [],
+  onSearch,
+  placeholder = 'Search albums, artists, latest...',
+  debounceMs = 300,
+}: SearchBarProps) {
   const [search, setSearch] = useState('');
   const [activeCategory, setActiveCategory] = useState<SearchCategory>('all');
   const [showPopover, setShowPopover] = useState(false);
+  const [showCategoryMenu, setShowCategoryMenu] = useState(false);
 
-  const containerRef = useRef<HTMLDivElement>(null);
-  const debouncedSearch = useDebounce(search, 300);
+  const containerRef = useRef<HTMLDivElement | null>(null);
+  const inputRef = useRef<HTMLInputElement | null>(null);
+  const listRef = useRef<HTMLUListElement | null>(null);
 
-  // Filter suggestions with useMemo
+  const debouncedSearch = useDebounce(search, debounceMs);
+  const currentYear = useMemo(() => new Date().getFullYear(), []);
+
+  // Normalize once for performance
+  const normalizedAlbums = useMemo(() => {
+    return albums.map((a, idx) => ({
+      entry: a,
+      name: (a['im:name']?.label ?? '').toLowerCase(),
+      artist: (a['im:artist']?.label ?? '').toLowerCase(),
+      year: safeGetReleaseYear(a),
+      label: makeLabel(a),
+      id: a?.id?.attributes?.['im:id'] ?? `album-${idx}`,
+      image: a?.['im:image']?.[1]?.label ?? a?.['im:image']?.[0]?.label ?? undefined,
+    }));
+  }, [albums]);
+
+  // Build suggestions grouped by category
   const suggestions = useMemo(() => {
-    if (!debouncedSearch.trim()) return {} as Record<SearchCategory, Suggestion[]>;
+    const term = debouncedSearch.trim().toLowerCase();
+    if (!term) return {} as Record<SearchCategory, Suggestion[]>;
 
-    const searchLower = debouncedSearch.toLowerCase();
-    return categories.reduce((acc, category) => {
-      const filtered = albums
-        .filter(album => {
-          const name = album['im:name']?.label?.toLowerCase() || '';
-          const artist = album['im:artist']?.label?.toLowerCase() || '';
-          const releaseYear = new Date(album['im:releaseDate']?.label).getFullYear();
-
+    return CATEGORIES.reduce((acc, category) => {
+      const filtered = normalizedAlbums
+        .filter((a) => {
           switch (category) {
             case 'all':
-              return name.includes(searchLower) ||
-                artist.includes(searchLower) ||
-                releaseYear === new Date().getFullYear();
+              return a.name.includes(term) || a.artist.includes(term) || (a.year === currentYear && (a.name.includes(term) || a.artist.includes(term)));;
             case 'albums':
-              return name.includes(searchLower);
+              return a.name.includes(term);
             case 'artists':
-              return artist.includes(searchLower);
+              return a.artist.includes(term);
             case 'latest':
-              return releaseYear === new Date().getFullYear() &&
-                (name.includes(searchLower) || artist.includes(searchLower));
+              return a.year === currentYear && (a.name.includes(term) || a.artist.includes(term));
             default:
               return false;
           }
         })
         .slice(0, 5)
-        .map(album => ({
-          id: album.id.attributes['im:id'],
-          label: `${album['im:name']?.label} - ${album['im:artist']?.label}`,
+        .map((a) => ({
+          id: a.id,
+          label: a.label,
           category,
-          data: album
+          data: a.entry,
         }));
 
-      if (filtered.length > 0) acc[category] = filtered;
+      if (filtered.length) acc[category] = filtered;
       return acc;
     }, {} as Record<SearchCategory, Suggestion[]>);
-  }, [albums, debouncedSearch]);
-
-  // Close popover on outside click
-  useEffect(() => {
-    const handleClickOutside = (e: MouseEvent) => {
-      if (containerRef.current && !containerRef.current.contains(e.target as Node)) {
-        setShowPopover(false);
-      }
-    };
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, []);
+  }, [normalizedAlbums, debouncedSearch, currentYear]);
 
   const hasResults = Object.keys(suggestions).length > 0;
+  const activeList = suggestions[activeCategory] ?? [];
 
-  // Handle selecting a suggestion
-  const handleSelect = (suggestion: Suggestion) => {
-    setSearch(suggestion.label);
-    setActiveCategory(suggestion.category);
-    setShowPopover(false);
-    if (onSearch) onSearch(suggestion.label, suggestion.category);
-  };
+  // Close popover/menu on outside click or Escape
+  useEffect(() => {
+    const handlePointerDown = (e: PointerEvent) => {
+      if (containerRef.current && !containerRef.current.contains(e.target as Node)) {
+        setShowPopover(false);
+        setShowCategoryMenu(false);
+      }
+    };
+    const handleKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        setShowPopover(false);
+        setShowCategoryMenu(false);
+        inputRef.current?.blur();
+      }
+    };
+    document.addEventListener('pointerdown', handlePointerDown);
+    document.addEventListener('keydown', handleKey);
+    return () => {
+      document.removeEventListener('pointerdown', handlePointerDown);
+      document.removeEventListener('keydown', handleKey);
+    };
+  }, []);
 
-  // Handle Enter key to trigger onSearch
-  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === 'Enter' && search.trim()) {
+  // Trigger onSearch (safe wrapper)
+  const triggerSearch = useCallback(
+    (term: string, category?: SearchCategory) => {
+      if (onSearch) onSearch(term, category);
+    },
+    [onSearch]
+  );
+
+  // Selecting a suggestion
+  const handleSelect = useCallback(
+    (suggestion: Suggestion) => {
+      setSearch(suggestion.label);
+      setActiveCategory(suggestion.category);
       setShowPopover(false);
-      if (onSearch) onSearch(search, activeCategory);
+      triggerSearch(suggestion.label, suggestion.category);
+    },
+    [triggerSearch]
+  );
+
+  const handleClear = useCallback(() => {
+    setSearch('');
+    setShowPopover(false);
+    inputRef.current?.focus();
+  }, []);
+
+  const handleInputChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    setSearch(e.target.value);
+    setShowPopover(true);
+  }, []);
+
+  const handleKeyDown = useCallback(
+    (e: React.KeyboardEvent<HTMLInputElement>) => {
+      if (e.key === 'Enter') {
+        if (search.trim()) {
+          setShowPopover(false);
+          triggerSearch(search, activeCategory);
+        }
+      } else if (e.key === 'ArrowDown') {
+        // focus first suggestion if exists
+        const first = listRef.current?.querySelector<HTMLLIElement>('li');
+        first?.focus();
+      } else if (e.key === 'Escape') {
+        setShowPopover(false);
+        setShowCategoryMenu(false);
+      }
+    },
+    [search, activeCategory, triggerSearch]
+  );
+
+  // Category menu click
+  const handleCategorySelect = (cat: SearchCategory) => {
+    setActiveCategory(cat);
+    setShowCategoryMenu(false);
+    // If there's a current search, re-trigger search with new category so UI updates
+    if (search.trim()) {
+      triggerSearch(search, cat);
+      // Keep the suggestions open to show filtered results
+      setShowPopover(true);
     }
   };
 
+  // Accessible ids (simple predictable ids; switch to useId if needed)
+  const inputId = 'search-input';
+  const listboxId = 'search-suggestions';
+
   return (
     <div className="relative w-full" ref={containerRef}>
-      <div className="flex gap-2">
+      <div className="flex gap-2 items-center">
         <div className="relative flex-1">
           <SearchIcon className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
           <Input
+            id={inputId}
+            ref={inputRef}
             type="text"
             value={search}
-            onChange={(e) => {
-              setSearch(e.target.value);
-              setShowPopover(true);
-            }}
+            onChange={handleInputChange}
             onFocus={() => setShowPopover(true)}
             onKeyDown={handleKeyDown}
             className="pl-9 pr-10 py-2 rounded-xl text-sm bg-white/5 border-white/10 focus:border-white/20"
-            placeholder="Search albums, artists, latest..."
+            placeholder={placeholder}
             autoComplete="off"
+            aria-autocomplete="list"
+            aria-controls={listboxId}
+            aria-expanded={showPopover}
+            aria-haspopup="listbox"
+            role="combobox"
           />
           {search && (
             <Button
               type="button"
               size="icon-sm"
               variant="ghost"
-              onClick={() => setSearch('')}
+              onClick={handleClear}
               className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
               aria-label="Clear search"
             >
@@ -135,88 +232,140 @@ const SearchBar = ({ albums = [], onSearch }: SearchBarProps) => {
           )}
         </div>
 
-        <Button
-          variant="outline"
-          size="sm"
-          className="px-3 bg-white/5 border-white/10 hover:bg-white/10"
-          onClick={() => setShowPopover(true)}
-        >
-          <Filter className="h-4 w-4 mr-2" />
-          {activeCategory}
-        </Button>
+        {/* Filter / category toggle */}
+        <div className="relative hidden sm:flex">
+          <Button
+            variant="outline"
+            size="sm"
+            className="px-3 bg-white/5 border-white/10 hover:bg-white/10 flex items-center cursor-pointer"
+            onClick={() => {
+              setShowCategoryMenu((s) => !s);
+              // ensure suggestions visible when opening category menu
+              setShowPopover(true);
+            }}
+            aria-expanded={showCategoryMenu}
+            aria-haspopup="menu"
+            aria-label="Select category"
+          >
+            <Filter className="h-4 w-4 mr-2" />
+            <span className="capitalize">{activeCategory}</span>
+          </Button>
+
+          {/* Category dropdown */}
+          {showCategoryMenu && (
+            <div className="absolute right-0 mt-2 w-40 bg-neutral-900 border border-white/10 rounded shadow-lg z-50">
+              <ul role="menu" className="p-2 space-y-1 text-white">
+                {CATEGORIES.map((cat) => {
+                  return (
+                    <li key={cat} role="none">
+                      <button
+                        role="menuitem"
+                        onClick={() => handleCategorySelect(cat)}
+                        className={cn(
+                          'w-full text-left px-3 py-1.5 rounded hover:bg-white/5 transition cursor-pointer',
+                          cat === activeCategory ? 'bg-white/5 font-medium' : ''
+                        )}
+                      >
+                        <span className="capitalize">{cat}</span>
+                      </button>
+                    </li>
+                  );
+                })}
+              </ul>
+            </div>
+          )}
+        </div>
       </div>
 
+      {/* Suggestions popover */}
       {showPopover && search && (
-        <div className="text-white absolute top-full left-0 right-0 mt-2 bg-neutral-900 rounded-xl border border-white/10 shadow-xl z-50 max-h-96 overflow-auto">
-          {/* Categories only display if there are results */}
+        <div
+          className="text-white absolute top-full left-0 right-0 mt-2 bg-neutral-900 rounded-xl border border-white/10 shadow-xl z-50 max-h-96 overflow-auto"
+          role="dialog"
+          aria-label="Search suggestions"
+        >
+          {/* Category chips (visible when results exist) */}
           {hasResults && (
-            <div className="sticky top-0 flex gap-1 p-2 bg-white/5 border-b border-white/10">
-              {categories.map(cat => {
-                if (!suggestions[cat]?.length) return null;
+            <div className="hidden sm:flex sticky top-0 gap-1 p-2 bg-white/5 border-b border-white/10">
+              {CATEGORIES.map((cat) => {
+                const count = suggestions[cat]?.length ?? 0;
+                if (!count) return null;
                 return (
-                  <Button
+                  <button
                     key={cat}
-                    size="sm"
-                    variant={cat === activeCategory ? 'default' : 'ghost'}
-                    className={cn('px-3 capitalize')}
-                    onClick={() => setActiveCategory(cat)}
+                    onClick={() => {
+                      setActiveCategory(cat);
+                      // Keep popover visible
+                      setShowPopover(true);
+                    }}
+                    className={cn(
+                      'px-3 py-1 rounded-full text-xs capitalize transition',
+                      cat === activeCategory ? 'bg-white/20 font-medium' : 'bg-white/5'
+                    )}
+                    aria-pressed={cat === activeCategory}
                   >
-                    {cat} ({suggestions[cat].length})
-                  </Button>
+                    {cat} ({count})
+                  </button>
                 );
               })}
             </div>
           )}
 
           <div className="p-2 text-white">
-            {hasResults && suggestions[activeCategory]?.length ? (
-              <ul className="space-y-1">
-                {suggestions[activeCategory].map(item => {
-                  const album = item.data
-                  const id = album.id?.attributes?.["im:id"]
-                  const title = album["im:name"]?.label
-                  const artist = album["im:artist"]?.label
-                  const image = album["im:image"]?.[1]?.label
-                  return <li
-                    key={item.id}
-                    onClick={() => handleSelect(item)}
-                  >
-                    <div className="max-h-64 overflow-y-auto space-y-2 scrollbar-thin scrollbar-thumb-gray-600 scrollbar-track-transparent">
-                      <div
-                        key={id}
-                        className="flex items-center justify-between gap-3 p-1.5 rounded hover:bg-white/5 transition cursor-pointer"
-                      >
+            {hasResults && activeList.length ? (
+              <ul
+                id={listboxId}
+                role="listbox"
+                aria-labelledby={inputId}
+                ref={listRef}
+                className="space-y-1"
+              >
+                {activeList.map((item) => {
+                  const album = item.data;
+                  const id = album?.id?.attributes?.['im:id'] ?? item.id;
+                  const title = album?.['im:name']?.label ?? 'Unknown';
+                  const artist = album?.['im:artist']?.label ?? 'Unknown';
+                  const image = album?.['im:image']?.[1]?.label ?? album?.['im:image']?.[0]?.label;
+
+                  return (
+                    <li
+                      key={item.id}
+                      tabIndex={0}
+                      onClick={() => handleSelect(item)}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter' || e.key === ' ') {
+                          e.preventDefault();
+                          handleSelect(item);
+                        }
+                      }}
+                      className="cursor-pointer rounded hover:bg-white/5 transition"
+                    >
+                      <div className="flex items-center gap-3 p-2">
                         <Link
-                          href={`/album/${id}`}
+                          href={`/album/${(id)}`}
                           className="flex items-center gap-3 flex-1"
                         >
-                          <Image
-                            src={image}
-                            alt={title}
-                            width={40}
-                            height={40}
-                            className="rounded-md"
-                          />
+                          {image ? (
+                            <Image src={image} alt={title} width={40} height={40} className="rounded-md" />
+                          ) : (
+                            <div className="w-10 h-10 rounded-md bg-gray-700" />
+                          )}
                           <div className="flex flex-col text-xs">
                             <span className="font-medium line-clamp-1">{title}</span>
                             <span className="text-gray-400 line-clamp-1">{artist}</span>
                           </div>
                         </Link>
                       </div>
-                    </div>
-                  </li>
+                    </li>
+                  );
                 })}
               </ul>
             ) : (
-              <p className="px-3 py-2 text-sm text-gray-400">
-                No results found for &quot;{search}&quot;
-              </p>
+              <p className="px-3 py-2 text-sm text-gray-400">No results found for &quot;{search}&quot;</p>
             )}
           </div>
         </div>
       )}
     </div>
   );
-};
-
-export default SearchBar;
+}

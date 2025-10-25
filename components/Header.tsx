@@ -5,11 +5,9 @@ import { HouseIcon, SearchIcon } from "lucide-react"
 import Favorites from "./Favorites"
 import SearchBar from "./SearchBar"
 import Link from "next/link"
-import { usePathname } from "next/navigation"
 import { useAppSelector } from "@/hooks/redux"
 
 const Header = () => {
-  const pathname = usePathname()
 
   const entries = useAppSelector((items) => items.albums.items)
 
@@ -17,7 +15,7 @@ const Header = () => {
     <header className="sticky top-0 z-50 bg-background/80 backdrop-blur-sm border-b border-border" role="banner">
       <div className="container mx-auto flex h-16 items-center justify-between px-4 lg:px-8">
         {/* Logo / Title */}
-        <Link href={pathname} aria-label="Current page">
+        <Link href="/" aria-label="Current page">
           <h1 className="text-2xl font-semibold bg-linear-to-r from-[#fd7f00] to-[#000ef5] bg-clip-text text-transparent tracking-tight">
             Sky Music
           </h1>
@@ -36,12 +34,13 @@ const Header = () => {
         <div className="flex items-center gap-3">
           <div className="sm:hidden">
             {/* Optional: search icon for mobile */}
-            <button
+            {/* <button
               aria-label="Search"
               className="p-2 rounded-xl hover:bg-accent transition"
             >
               <SearchIcon size={20} />
-            </button>
+            </button> */}
+            <SearchBar albums={entries} />
           </div>
           <Favorites />
         </div>
