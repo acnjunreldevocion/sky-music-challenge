@@ -6,9 +6,13 @@ import Favorites from "./Favorites"
 import SearchBar from "./SearchBar"
 import Link from "next/link"
 import { usePathname } from "next/navigation"
+import { useAppSelector } from "@/hooks/redux"
 
 const Header = () => {
   const pathname = usePathname()
+
+  const entries = useAppSelector((items) => items.albums.items)
+
   return (
     <header className="sticky top-0 z-50 bg-background/80 backdrop-blur-sm border-b border-border" role="banner">
       <div className="container mx-auto flex h-16 items-center justify-between px-4 lg:px-8">
@@ -25,7 +29,7 @@ const Header = () => {
           <Link href="/" className="hover:bg-gray-50 p-2" aria-label="Link to homepage">
             <HouseIcon size={24} className="text-muted-foreground" />
           </Link>
-          <SearchBar />
+          <SearchBar albums={entries} />
         </div>
 
         {/* Right Section */}

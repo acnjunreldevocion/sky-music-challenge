@@ -5,6 +5,8 @@ import HeroArtistAlbums from '@/components/ArtistAlbums'
 import ArtistAbout from '@/components/ArtistAbout'
 import { fetchJSON } from '@/lib/services'
 import ConnectionError from '@/components/ConnectionError'
+import Header from '@/components/Header'
+import ReduxHydrator from '@/provider/ReduxHydrator'
 
 export default async function ArtistPage({ params }: { params: Promise<{ slug: string }> }) {
   const artistId = (await params).slug
@@ -18,33 +20,37 @@ export default async function ArtistPage({ params }: { params: Promise<{ slug: s
 
   const albumsResult = await fetchJSON<TopAlbums>(apiUrl)
 
-  const entry = albumsResult?.feed?.entry
+  const entries = albumsResult?.feed?.entry
 
-  if (!entry) {
+  if (!entries) {
     return (
       <ConnectionError />
     );
   }
 
-  const album = entry.find(({ id }) => id.attributes['im:id'] === artistId)
+  const album = entries.find(({ id }) => id.attributes['im:id'] === artistId)
   const artist = album?.['im:artist'].label
 
-  const albums = entry.filter((value) => {
+  const albums = entries.filter((value) => {
     return value['im:artist'].label.toLowerCase() === artist?.toLowerCase()
   })
 
   return (
-    <main className="min-h-screen bg-linear-to-br from-[#fd7f00] via-[#1b1b1b] to-[#000ef5] text-white">
-      <div className="container mx-auto px-4 lg:gap-2 lg:px-6">
-        {/* HERO */}
-        <HeroArtist album={album} />
+    <>
+      <ReduxHydrator entries={entries} />
+      <main className="min-h-screen bg-linear-to-br from-[#fd7f00] via-[#1b1b1b] to-[#000ef5] text-white">
+        <div className="container mx-auto px-4 lg:gap-2 lg:px-6">
+          {/* HERO */}
+          <HeroArtist album={album} />
 
-        {/* CONTENT SECTIONS */}
-        <HeroArtistAlbums albums={albums} />
+          {/* CONTENT SECTIONS */}
+          <HeroArtistAlbums albums={albums} />
 
-        {/* ABOUT SECTION */}
-        <ArtistAbout artist={album} />
-      </div>
-    </main>
+          {/* ABOUT SECTION */}
+          <ArtistAbout artist={album} />
+        </div>
+      </main>
+    </>
+
   )
 }

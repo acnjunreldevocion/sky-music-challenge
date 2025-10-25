@@ -1,11 +1,14 @@
 
+import AlbumCard from '@/components/AlbumCard'
+import ArtistCard from '@/components/ArtistCard'
 import ClientFavoritesSection from '@/components/ClientFavoriteSection'
 import ConnectionError from '@/components/ConnectionError'
-import SectionCard from '@/components/SectionCard'
+import Header from '@/components/Header'
 import { SectionKey, TITLES } from '@/lib/constants'
-import { getLatestSongs, getUniqueArtist } from '@/lib/helper'
+import { getLatestSongs, getTrendingSongs, getUniqueArtist } from '@/lib/helper'
 import { fetchJSON } from '@/lib/services'
 import { TopAlbums } from '@/lib/types'
+import ReduxHydrator from '@/provider/ReduxHydrator'
 
 export default async function Section({ params }: { params: Promise<{ slug: string }> }) {
 
@@ -17,8 +20,6 @@ export default async function Section({ params }: { params: Promise<{ slug: stri
     throw new Error('Missing NEXT_PUBLIC_API_URL in environment variables');
   }
 
-  console.log(slug, 'slug')
-
   // ✅ Only fetch API for non-favorites pages
   if (slug === 'favorites-songs') {
     return <ClientFavoritesSection slug={slug} />
@@ -26,35 +27,58 @@ export default async function Section({ params }: { params: Promise<{ slug: stri
 
   const albums = await fetchJSON<TopAlbums>(apiUrl)
 
-  const entry = albums?.feed?.entry
+  const entries = albums?.feed?.entry
 
-  if (!entry) {
+  if (!entries) {
     return (
       <ConnectionError />
     );
   }
 
+  const sections = [
+    {
+      title: "Trending Songs",
+      path: 'trending-songs',
+      data: getTrendingSongs(entries),
+      Component: AlbumCard
+    },
+    {
+      title: "Artists",
+      path: 'artists',
+      data: getUniqueArtist(entries),
+      Component: ArtistCard
+    },
+    {
+      title: "Latest Songs",
+      path: 'latest-songs',
+      data: getLatestSongs(entries),
+      Component: AlbumCard
+    },
+  ]
 
-  let newEntry = getLatestSongs(entry)
-  if (TITLES.artists.includes(slug)) {
-    newEntry = getUniqueArtist(entry)
-  }
-  if (TITLES['favorites-songs'].includes(slug)) {
-    newEntry = getLatestSongs(entry)
-  }
+  const section = sections.find((section) => section.path.includes(slug))
+
+  if (!section) return null
+
+  const Component = section?.Component
+  const newEntry = section?.data
 
   return (
-    <main className="min-h-screen bg-linear-to-br from-[#fd7f00] via-[#1b1b1b] to-[#000ef5] text-white">
-      <div className="container mx-auto px-4 lg:gap-2 lg:px-6 pt-10">
-        <div className="p-6">
-          <h1 className="font-bold text-3xl text-white pb-6">{TITLES[slug]}</h1>
-          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-8 gap-4 justify-items-center">
-            {newEntry.map((album, idx) => (
-              <SectionCard key={idx} slug={slug} entry={album} />
-            ))}
+    <>
+      <ReduxHydrator entries={entries} />
+      <main className="min-h-screen bg-linear-to-br from-[#fd7f00] via-[#1b1b1b] to-[#000ef5] text-white">
+        <div className="container mx-auto px-4 lg:gap-2 lg:px-6 pt-10">
+          <div className="p-6">
+            <h1 className="font-bold text-3xl text-white pb-6">{TITLES[slug]}</h1>
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-8 gap-4 justify-items-center">
+              {(newEntry ?? []).map((album, idx) => (
+                Component && <Component album={album} key={idx} />
+              ))}
+            </div>
           </div>
         </div>
-      </div>
-    </main>
+      </main>
+    </>
+
   )
 }
