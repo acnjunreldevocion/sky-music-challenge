@@ -1,8 +1,8 @@
 import Image from 'next/image'
-import { Entry } from '@/lib/types'
-import { Card } from './ui/card'
+import { Entry } from '@/lib/types/songs'
 import Link from 'next/link'
 import { PLACEHOLDER_IMAGE } from '@/lib/constants'
+import { Card } from '../ui/card'
 
 interface ArtistAvatarProps {
   album: Entry

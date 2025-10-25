@@ -2,10 +2,10 @@
 'use client'
 
 import { HouseIcon } from "lucide-react"
-import Favorites from "./Favorites"
-import SearchBar from "./SearchBar"
 import Link from "next/link"
 import { useAppSelector } from "@/hooks/redux"
+import SearchBar from "./SearchBar"
+import Favorites from "../favorites/Favorites"
 
 const Header = () => {
 

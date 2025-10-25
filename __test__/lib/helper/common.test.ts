@@ -7,7 +7,7 @@ import {
   saveFavorites,
   checkFavoriteFromStorage,
 } from '@/lib/helper'
-import { Entry } from '@/lib/types'
+import { Entry } from '@/lib/types/songs'
 
 describe('lib/helper', () => {
   beforeEach(() => {

@@ -1,14 +1,12 @@
 
-import AlbumCard from "@/components/AlbumCard";
-import ArtistCard from "@/components/ArtistCard";
-import CardWrapper from "@/components/common/CardWrapper";
-import ScrollContainer from "@/components/common/ScrollContainer";
-import ConnectionError from "@/components/ConnectionError";
-import HeadingTitle from "@/components/HeadingTitle";
-import { getLatestSongs, getTrendingSongs, getUniqueArtist } from "@/lib/helper";
 import { fetchJSON } from "@/lib/services";
-import { TopAlbums } from "@/lib/types";
+import { TopAlbums } from "@/lib/types/songs";
 import ReduxHydrator from "@/provider/ReduxHydrator";
+import ArtistCard from "@/components/artists/ArtistCard";
+import { getLatestSongs, getTrendingSongs, getUniqueArtist } from "@/lib";
+import ConnectionError from "@/components/common/ConnectionError";
+import { AlbumCard } from "@/components/album";
+import { CardWrapper, HeadingTitle, ScrollContainer } from "@/components/common";
 
 
 export default async function Home() {

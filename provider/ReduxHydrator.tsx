@@ -1,7 +1,7 @@
 'use client';
 
 import { useAppDispatch } from "@/hooks/redux";
-import { Entry } from "@/lib/types";
+import { Entry } from "@/lib/types/songs";
 import { setAlbums } from "@/store/features/albumSlice";
 import { useEffect } from "react";
 

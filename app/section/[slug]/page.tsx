@@ -1,13 +1,12 @@
 
-import AlbumCard from '@/components/AlbumCard'
-import ArtistCard from '@/components/ArtistCard'
-import ClientFavoritesSection from '@/components/ClientFavoriteSection'
-import ConnectionError from '@/components/ConnectionError'
-import Header from '@/components/Header'
+import AlbumCard from '@/components/album/AlbumCard'
+import ArtistCard from '@/components/artists/ArtistCard'
+import ConnectionError from '@/components/common/ConnectionError'
+import ClientFavoritesSection from '@/components/favorites/ClientFavoriteSection'
+import { getLatestSongs, getTrendingSongs, getUniqueArtist } from '@/lib'
 import { SectionKey, TITLES } from '@/lib/constants'
-import { getLatestSongs, getTrendingSongs, getUniqueArtist } from '@/lib/helper'
 import { fetchJSON } from '@/lib/services'
-import { TopAlbums } from '@/lib/types'
+import { TopAlbums } from '@/lib/types/songs'
 import ReduxHydrator from '@/provider/ReduxHydrator'
 
 export default async function Section({ params }: { params: Promise<{ slug: string }> }) {

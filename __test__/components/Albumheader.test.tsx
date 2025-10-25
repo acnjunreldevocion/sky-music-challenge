@@ -1,11 +1,9 @@
 import { render, screen } from '@testing-library/react'
 import '@testing-library/jest-dom'
-import AlbumHeader from '@/components/AlbumHeader'
+import AlbumHeader from '@/components/album/AlbumHeader'
 import { format } from 'date-fns'
-import { Entry } from '@/lib/types'
+import { Entry } from '@/lib/types/songs'
 import { PLACEHOLDER_IMAGE } from '@/lib/constants'
-
-// Ensure next/image renders as a plain img in tests
 
 describe('AlbumHeader', () => {
   const mockAlbum = {
@@ -23,7 +21,7 @@ describe('AlbumHeader', () => {
   } as unknown as Entry
 
   describe('Rendering', () => {
-    it('renders all album information correctly', () => {
+    it('renders album information including title, artist, price, and release date', () => {
       render(<AlbumHeader album={mockAlbum} />)
 
       expect(screen.getByText('Test Album')).toBeInTheDocument()
@@ -32,63 +30,54 @@ describe('AlbumHeader', () => {
       expect(screen.getByText(format(new Date('2024-01-15'), 'MMMM d, yyyy'))).toBeInTheDocument()
     })
 
-    it('renders action buttons and links correctly', () => {
+    it('renders artist and view links', () => {
       render(<AlbumHeader album={mockAlbum} />)
-
-      const artistLink = screen.getByTestId('artist-link')
-      const viewLink = screen.getByTestId('view-album-link')
-
-      expect(artistLink).toBeInTheDocument()
-      expect(viewLink).toBeInTheDocument()
+      expect(screen.getByTestId('artist-link')).toBeInTheDocument()
+      expect(screen.getByTestId('view-album-link')).toBeInTheDocument()
     })
 
-    it('artist link points to internal artist route', () => {
+    it('applies correct href and aria-label for artist link', () => {
       render(<AlbumHeader album={mockAlbum} />)
       const artistLink = screen.getByTestId('artist-link')
       expect(artistLink).toHaveAttribute('href', `/artist/${mockAlbum.id.attributes['im:id']}`)
       expect(artistLink).toHaveAttribute('aria-label', `Redirect to ${mockAlbum['im:artist'].label}`)
     })
 
-    it('view link points to external album url with proper target/rel', () => {
+    it('applies correct href, target, and rel attributes for external album link', () => {
       render(<AlbumHeader album={mockAlbum} />)
       const viewLink = screen.getByTestId('view-album-link')
       expect(viewLink).toHaveAttribute('href', mockAlbum.link.attributes.href)
       expect(viewLink).toHaveAttribute('target', '_blank')
-      // next/link in app router may not add rel automatically; component sets none, but test ensures safe external linking if present
-      // If your component sets rel, assert it; otherwise ensure target is _blank
-      // expect(viewLink).toHaveAttribute('rel', 'noopener noreferrer')
+      // optional: expect(viewLink).toHaveAttribute('rel', 'noopener noreferrer')
     })
 
-    it('renders description containing artist and title', () => {
+    it('renders descriptive text containing artist and album title', () => {
       render(<AlbumHeader album={mockAlbum} />)
       expect(screen.getByText(new RegExp(`${mockAlbum['im:artist'].label} — ${mockAlbum['im:name'].label}`))).toBeInTheDocument()
     })
 
-    it('returns null when album prop is undefined', () => {
+    it('renders nothing when album prop is undefined', () => {
       const { container } = render(<AlbumHeader album={undefined} />)
       expect(container.firstChild).toBeNull()
     })
   })
 
-  describe('Image optimization and fallback', () => {
-    it('renders optimized album cover image with correct attributes', () => {
+  describe('Image Optimization and Fallback', () => {
+    it('renders album cover image with proper attributes', () => {
       render(<AlbumHeader album={mockAlbum} />)
-
       const image = screen.getByTestId('album-cover-image')
+
       expect(image).toHaveAttribute('src', 'https://example.com/cover.jpg')
       expect(image).toHaveAttribute('alt', 'Album cover for Test Album')
       expect(image).toHaveAttribute('width', '300')
       expect(image).toHaveAttribute('height', '300')
-      // fetchPriority becomes fetchpriority attribute on rendered img
       expect(image).toHaveAttribute('fetchpriority', 'high')
     })
 
-    it('uses placeholder image when album image is missing', () => {
-      const albumNoImage = {
-        ...mockAlbum,
-        'im:image': undefined
-      } as unknown as Entry
+    it('uses placeholder image when album cover is missing', () => {
+      const albumNoImage = { ...mockAlbum, 'im:image': undefined } as unknown as Entry
       render(<AlbumHeader album={albumNoImage} />)
+
       const image = screen.getByTestId('album-cover-image')
       expect(image).toBeInTheDocument()
       expect(image).toHaveAttribute('src', PLACEHOLDER_IMAGE)
@@ -96,13 +85,13 @@ describe('AlbumHeader', () => {
   })
 
   describe('Accessibility', () => {
-    it('has proper heading hierarchy', () => {
+    it('renders album title as an H1 heading', () => {
       render(<AlbumHeader album={mockAlbum} />)
       const heading = screen.getByRole('heading', { level: 1 })
       expect(heading).toHaveTextContent('Test Album')
     })
 
-    it('links have accessible names and focus-visible classes', () => {
+    it('ensures links have accessible names and focus-visible indicators', () => {
       render(<AlbumHeader album={mockAlbum} />)
 
       const artistLink = screen.getByTestId('artist-link')
@@ -110,25 +99,19 @@ describe('AlbumHeader', () => {
 
       expect(artistLink).toHaveAccessibleName()
       expect(viewLink).toHaveAccessibleName()
-
-      // focus-visible classes exist on elements' className string
       expect(artistLink.className).toMatch(/focus-visible:ring-2/)
       expect(viewLink.className).toMatch(/focus-visible:ring-2/)
     })
 
-    it('does not render price badge when price is missing', () => {
-      const albumNoPrice = {
-        ...mockAlbum,
-        'im:price': undefined
-      } as unknown as Entry
+    it('omits price display when album price is missing', () => {
+      const albumNoPrice = { ...mockAlbum, 'im:price': undefined } as unknown as Entry
       render(<AlbumHeader album={albumNoPrice} />)
-      // price badge uses the price text directly; ensure it is not present
       expect(screen.queryByText('$9.99')).toBeNull()
     })
   })
 
   describe('Styling', () => {
-    it('applies gradient background classes to container', () => {
+    it('applies gradient background styles to container', () => {
       render(<AlbumHeader album={mockAlbum} />)
       const container = screen.getByTestId('album-header')
       expect(container).toHaveClass('from-sky-900/6')

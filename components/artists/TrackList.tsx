@@ -1,6 +1,6 @@
 'use client'
 
-import { Entry } from "@/lib/types"
+import { Entry } from "@/lib/types/songs"
 import Link from "next/link"
 import Image from "next/image"
 import { Star } from "lucide-react"

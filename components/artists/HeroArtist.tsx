@@ -1,4 +1,4 @@
-import { Entry } from '@/lib/types'
+import { Entry } from '@/lib/types/songs'
 import { UsersIcon, ExternalLink } from 'lucide-react'
 import Image from 'next/image'
 import Link from 'next/link'

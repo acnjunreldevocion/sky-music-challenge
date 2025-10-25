@@ -1,10 +1,10 @@
 
 
-import AlbumHeader from '@/components/AlbumHeader'
-import ConnectionError from '@/components/ConnectionError'
-import TrackList from '@/components/TrackList'
+import AlbumHeader from '@/components/album/AlbumHeader'
+import ConnectionError from '@/components/common/ConnectionError'
+import TrackList from '@/components/artists/TrackList'
 import { fetchJSON } from '@/lib/services'
-import { TopAlbums } from '@/lib/types'
+import { TopAlbums } from '@/lib/types/songs'
 import ReduxHydrator from '@/provider/ReduxHydrator'
 
 export default async function AlbumPage({ params }: { params: Promise<{ slug: string }> }) {

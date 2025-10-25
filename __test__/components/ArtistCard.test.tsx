@@ -1,8 +1,8 @@
 import { render, screen } from '@testing-library/react'
 import '@testing-library/jest-dom'
-import ArtistCard from '@/components/ArtistCard'
-import { Entry } from '@/lib/types'
+import { Entry } from '@/lib/types/songs'
 import { PLACEHOLDER_IMAGE } from '@/lib/constants'
+import ArtistCard from '@/components/artists/ArtistCard'
 
 describe('ArtistCard', () => {
   const mockArtist = {
@@ -95,24 +95,4 @@ describe('ArtistCard', () => {
       expect(heading).toHaveTextContent('Test Artist')
     })
   })
-
-  // describe('Visual styling and interactions', () => {
-  //   it('applies hover effects', () => {
-  //     render(<ArtistCard album={mockArtist} />)
-
-  //     const card = screen.getByTestId('artist-card')
-  //     expect(card).toHaveClass('hover:scale-[1.02]', 'transition-transform')
-  //   })
-
-  //   it('applies proper image styling', () => {
-  //     render(<ArtistCard album={mockArtist} />)
-
-  //     const imageContainer = screen.getByTestId('image-container')
-  //     expect(imageContainer).toHaveClass(
-  //       'rounded-full',
-  //       'overflow-hidden',
-  //       'aspect-square'
-  //     )
-  //   })
-  // })
 })

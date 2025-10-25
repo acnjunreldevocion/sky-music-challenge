@@ -1,11 +1,11 @@
 
-import { TopAlbums } from '@/lib/types'
-import HeroArtist from '@/components/HeroArtist'
-import HeroArtistAlbums from '@/components/ArtistAlbums'
-import ArtistAbout from '@/components/ArtistAbout'
+import { TopAlbums } from '@/lib/types/songs'
+import HeroArtist from '@/components/artists/HeroArtist'
+import ArtistAbout from '@/components/artists/ArtistAbout'
 import { fetchJSON } from '@/lib/services'
-import ConnectionError from '@/components/ConnectionError'
+import ConnectionError from '@/components/common/ConnectionError'
 import ReduxHydrator from '@/provider/ReduxHydrator'
+import HeroArtistAlbums from '@/components/artists/ArtistAlbums'
 
 export default async function ArtistPage({ params }: { params: Promise<{ slug: string }> }) {
   const artistId = (await params).slug

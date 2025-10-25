@@ -1,13 +1,13 @@
 "use client"
 
 import { StarIcon, X } from "lucide-react"
-import { Button } from "./ui/button"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
 import { useAppDispatch, useAppSelector } from "@/hooks/redux"
 import { toggleFavorites } from "@/store/features/favoritesSlice"
 import Image from "next/image"
 import Link from "next/link"
-import { Entry } from "@/lib/types"
+import { Entry } from "@/lib/types/songs"
+import { Button } from "../ui/button"
 
 const Favorites = () => {
   const dispatch = useAppDispatch()

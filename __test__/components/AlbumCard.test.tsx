@@ -1,7 +1,7 @@
 import { render, screen, fireEvent } from '@testing-library/react'
 import '@testing-library/jest-dom'
-import AlbumCard from '@/components/AlbumCard'
-import { Entry } from '@/lib/types'
+import AlbumCard from '@/components/album/AlbumCard'
+import { Entry } from '@/lib/types/songs'
 import { PLACEHOLDER_IMAGE } from '@/lib/constants'
 
 // Mock Redux hooks
@@ -41,180 +41,133 @@ describe('AlbumCard', () => {
 
   beforeEach(() => {
     jest.clearAllMocks()
-    mockSelector.mockReturnValue([]) // Default: no favorites
+    mockSelector.mockReturnValue([])
   })
 
   describe('Error Handling', () => {
-    it('handles null album data gracefully', () => {
+    it('renders nothing when album data is null', () => {
       const { container } = render(<AlbumCard album={null as unknown as Entry} />)
       expect(container.firstChild).toBeNull()
     })
 
-    it('handles malformed image array gracefully', () => {
-      const malformedAlbum = {
-        ...mockAlbum,
-        'im:image': [{ label: 'wrong-index' }]
-      } as unknown as Entry
-
+    it('applies placeholder image when image array is malformed', () => {
+      const malformedAlbum = { ...mockAlbum, 'im:image': [{ label: 'wrong-index' }] } as Entry
       render(<AlbumCard album={malformedAlbum} />)
-      const image = screen.getByRole('img')
-      expect(image).toHaveAttribute('src', PLACEHOLDER_IMAGE)
+      expect(screen.getByRole('img')).toHaveAttribute('src', PLACEHOLDER_IMAGE)
     })
 
-    it('handles missing price data gracefully', () => {
-      const albumNoPrice = {
-        ...mockAlbum,
-        'im:price': undefined
-      } as unknown as Entry
-
+    it('omits price display when price data is missing', () => {
+      const albumNoPrice = { ...mockAlbum, 'im:price': undefined } as unknown as Entry
       render(<AlbumCard album={albumNoPrice} />)
       expect(screen.queryByText(/\$/)).not.toBeInTheDocument()
     })
   })
 
   describe('Redux State Management', () => {
-    it('correctly identifies favorite status on rerender', () => {
+    it('applies correct favorite status after rerender', () => {
       const { rerender } = render(<AlbumCard album={mockAlbum} />)
-
-      let starButton = screen.getByRole('button')
-      expect(starButton).toHaveAccessibleName('Add to favorites')
+      expect(screen.getByRole('button')).toHaveAccessibleName('Add to favorites')
 
       mockSelector.mockReturnValue([mockAlbum])
       rerender(<AlbumCard album={mockAlbum} />)
-
-      starButton = screen.getByRole('button')
-      expect(starButton).toHaveAccessibleName('Remove from favorites')
+      expect(screen.getByRole('button')).toHaveAccessibleName('Remove from favorites')
     })
 
     it('maintains favorite state after multiple toggles', () => {
       render(<AlbumCard album={mockAlbum} />)
       const starButton = screen.getByRole('button')
 
-      // First toggle
       fireEvent.click(starButton)
-      expect(mockDispatch).toHaveBeenCalledTimes(1)
-
-      // Second toggle
       fireEvent.click(starButton)
       expect(mockDispatch).toHaveBeenCalledTimes(2)
     })
   })
 
   describe('UI Interactions', () => {
-    it('applies hover styles to card container', () => {
+    it('applies hover shadow styles to card container', () => {
       render(<AlbumCard album={mockAlbum} />)
-      const card = screen.getByTestId('card-album')
-      expect(card).toHaveClass('hover:shadow-lg', 'hover:shadow-sky-900/30')
+      expect(screen.getByTestId('card-album')).toHaveClass('hover:shadow-lg', 'hover:shadow-sky-900/30')
     })
 
-    it('applies image hover effects', () => {
+    it('applies hover opacity effect to album image', () => {
       render(<AlbumCard album={mockAlbum} />)
-      const image = screen.getByRole('img')
-      expect(image).toHaveClass('group-hover:opacity-80')
+      expect(screen.getByRole('img')).toHaveClass('group-hover:opacity-80')
     })
 
-    it('applies proper transition effects', () => {
+    it('applies transition effects to card container', () => {
       render(<AlbumCard album={mockAlbum} />)
-      const card = screen.getByTestId('card-album')
-      expect(card).toHaveClass('transition-all')
+      expect(screen.getByTestId('card-album')).toHaveClass('transition-all')
     })
   })
 
   describe('Layout and Styling', () => {
-    it('maintains proper card dimensions', () => {
+    it('maintains consistent card dimensions', () => {
       render(<AlbumCard album={mockAlbum} />)
-      const card = screen.getByTestId('card-album')
-      expect(card).toHaveClass('min-h-[310px]', 'max-h-[310px]')
+      expect(screen.getByTestId('card-album')).toHaveClass('min-h-[310px]', 'max-h-[310px]')
     })
 
-    it('applies proper text styles', () => {
+    it('applies correct text styles to title and artist', () => {
       render(<AlbumCard album={mockAlbum} />)
-
-      const title = screen.getByText(mockAlbum['im:name'].label)
-      expect(title).toHaveClass('font-semibold', 'text-white')
-
-      const artist = screen.getByText(mockAlbum['im:artist'].label)
-      expect(artist).toHaveClass('text-gray-200', 'line-clamp-1')
+      expect(screen.getByText(mockAlbum['im:name'].label)).toHaveClass('font-semibold', 'text-white')
+      expect(screen.getByText(mockAlbum['im:artist'].label)).toHaveClass('text-gray-200', 'line-clamp-1')
     })
 
-    it('applies proper image container styles', () => {
+    it('applies rounded corners and object-fit to image', () => {
       render(<AlbumCard album={mockAlbum} />)
-      const imageContainer = screen.getByTestId('album-image')
-      expect(imageContainer).toHaveClass('rounded', 'object-cover')
+      expect(screen.getByTestId('album-image')).toHaveClass('rounded', 'object-cover')
     })
   })
 
   describe('Performance Optimizations', () => {
-    it('uses proper image loading attributes', () => {
+    it('applies correct image loading attributes', () => {
       render(<AlbumCard album={mockAlbum} />)
-      const image = screen.getByRole('img')
-      expect(image).toHaveAttribute('fetchpriority', 'high')
+      expect(screen.getByRole('img')).toHaveAttribute('fetchpriority', 'high')
     })
 
-    it('has proper transition classes for performance', () => {
+    it('applies transition classes for smooth rendering', () => {
       render(<AlbumCard album={mockAlbum} />)
-      const card = screen.getByTestId('album-card-link')
-      expect(card.className).toMatch(/transition-(?:all|transform)/)
+      expect(screen.getByTestId('album-card-link').className).toMatch(/transition-(?:all|transform)/)
     })
   })
 
   describe('Event Propagation', () => {
-    it('prevents event bubbling on favorite button click', () => {
+    it('prevents bubbling on favorite button click', () => {
       render(<AlbumCard album={mockAlbum} />)
+      const starButton = screen.getByRole('button', { name: /add to favorites|remove from favorites/i })
 
-      const starButton = screen.getByRole('button', {
-        name: /add to favorites|remove from favorites/i
-      })
-
-      // Create a synthetic event with preventDefault and stopPropagation
       const mockPreventDefault = jest.fn()
       const mockStopPropagation = jest.fn()
-      const mockEvent = new MouseEvent('click', {
-        bubbles: true,
-        cancelable: true
-      })
+      const mockEvent = new MouseEvent('click', { bubbles: true, cancelable: true })
 
-      // Add both preventDefault and stopPropagation methods
-      Object.defineProperty(mockEvent, 'preventDefault', {
-        value: mockPreventDefault
-      })
-      Object.defineProperty(mockEvent, 'stopPropagation', {
-        value: mockStopPropagation
-      })
+      Object.defineProperty(mockEvent, 'preventDefault', { value: mockPreventDefault })
+      Object.defineProperty(mockEvent, 'stopPropagation', { value: mockStopPropagation })
 
-      // Fire event with our mock
       fireEvent(starButton, mockEvent)
 
-      // Verify both methods were called
       expect(mockPreventDefault).toHaveBeenCalled()
       expect(mockStopPropagation).toHaveBeenCalled()
-
-      // Verify Redux action was dispatched
       expect(mockDispatch).toHaveBeenCalledTimes(1)
       expect(mockToggleFavorites).toHaveBeenCalledWith(mockAlbum)
     })
   })
 
-  describe('Image optimization and fallback', () => {
-    it('renders placeholder image when src is empty', () => {
+  describe('Image Optimization and Fallback', () => {
+    it('renders placeholder when image source is empty', () => {
       const albumNoImage = { ...mockAlbum, 'im:image': [] } as Entry
       render(<AlbumCard album={albumNoImage} />)
-      const image = screen.getByRole('img')
-      expect(image).toHaveAttribute('src', PLACEHOLDER_IMAGE)
+      expect(screen.getByRole('img')).toHaveAttribute('src', PLACEHOLDER_IMAGE)
     })
 
-    it('renders correct alt text for album image', () => {
+    it('renders descriptive alt text for album image', () => {
       render(<AlbumCard album={mockAlbum} />)
-      const image = screen.getByRole('img')
-      expect(image).toHaveAttribute('alt', `Album cover for ${mockAlbum['im:name'].label}`)
+      expect(screen.getByRole('img')).toHaveAttribute('alt', `Album cover for ${mockAlbum['im:name'].label}`)
     })
   })
 
-  describe('Link and navigate', () => {
-    it('renders correct link to album page', () => {
+  describe('Navigation', () => {
+    it('applies correct link to album details page', () => {
       render(<AlbumCard album={mockAlbum} />)
-      const link = screen.getByTestId('album-card-link')
-      expect(link).toHaveAttribute('href', `/album/${mockAlbum.id.attributes['im:id']}`)
+      expect(screen.getByTestId('album-card-link')).toHaveAttribute('href', `/album/${mockAlbum.id.attributes['im:id']}`)
     })
   })
 })

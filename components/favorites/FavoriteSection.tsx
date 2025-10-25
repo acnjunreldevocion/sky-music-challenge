@@ -2,7 +2,7 @@
 
 import ScrollContainer from "./common/ScrollContainer"
 import HeadingTitle from "./HeadingTitle"
-import AlbumCard from "./AlbumCard"
+import AlbumCard from "./album/AlbumCard"
 import { useEffect } from "react";
 import CardWrapper from "./common/CardWrapper";
 import { useAppDispatch, useAppSelector } from "@/hooks/redux";

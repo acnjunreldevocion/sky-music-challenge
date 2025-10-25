@@ -1,5 +1,5 @@
-import { Entry } from '@/lib/types'
-import AlbumCard from './AlbumCard'
+import { Entry } from '@/lib/types/songs'
+import { AlbumCard } from '../album'
 
 const HeroArtistAlbums = ({ albums }: { albums: Entry[] }) => {
   if ((albums ?? []).length <= 0) return null

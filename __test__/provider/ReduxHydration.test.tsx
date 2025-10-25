@@ -3,7 +3,7 @@ import { render, waitFor } from '@testing-library/react';
 import * as reduxHook from '@/hooks/redux';
 import * as albumSlice from '@/store/features/albumSlice';
 import ReduxHydrator from '@/provider/ReduxHydrator';
-import { Entry } from '@/lib/types';
+import { Entry } from '@/lib/types/songs';
 
 // Mock the hooks and slice used by the component
 jest.mock('@/hooks/redux', () => ({

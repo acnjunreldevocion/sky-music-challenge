@@ -1,5 +1,5 @@
-import { buildSuggestionsManual } from '@/lib/searchHelper';
-import type { NormalizeAlbums } from '@/lib/searchHelper';
+import { buildSuggestionsManual, NormalizeAlbums } from "@/lib";
+
 
 describe('buildSuggestionsManual (enhanced matching)', () => {
   const nowIso = new Date().toISOString();

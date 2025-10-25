@@ -1,4 +1,4 @@
-import { Entry } from '@/lib/types'
+import { Entry } from '@/lib/types/songs'
 import favoritesReducer, { toggleFavorites } from '@/store/features/favoritesSlice'
 
 const sampleAlbum1 = {

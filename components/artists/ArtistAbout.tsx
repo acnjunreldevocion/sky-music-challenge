@@ -1,4 +1,4 @@
-import { Entry } from '@/lib/types'
+import { Entry } from '@/lib/types/songs'
 
 const ArtistAbout = ({ artist }: { artist?: Entry }) => {
   if (!artist) return null

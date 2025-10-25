@@ -1,5 +1,6 @@
-import { Entry } from "./types"
+
 import { isSameYear } from "date-fns"
+import { Entry } from "../types/songs"
 
 export function getUniqueArtist(albums: Entry[]) {
   const seen = new Set<string>()

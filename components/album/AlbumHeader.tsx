@@ -1,7 +1,7 @@
 
 import Image from 'next/image'
 import { ExternalLink } from 'lucide-react'
-import { Entry } from '@/lib/types'
+import { Entry } from '@/lib/types/songs'
 import { format } from 'date-fns'
 import Link from 'next/link'
 import { PLACEHOLDER_IMAGE } from '@/lib/constants'

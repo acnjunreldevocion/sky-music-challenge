@@ -2,14 +2,14 @@
 
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { SearchIcon, X, Filter } from 'lucide-react';
-import { Input } from './ui/input';
-import { Button } from './ui/button';
 import Link from 'next/link';
 import Image from 'next/image';
 import { useDebounce } from '@/hooks/useDebounce';
 import { cn } from '@/lib/utils';
-import type { Entry } from '@/lib/types';
-import { buildSuggestionsManual, NormalizeAlbums } from '@/lib/searchHelper';
+import type { Entry } from '@/lib/types/songs';
+import { buildSuggestionsManual, NormalizeAlbums } from '@/lib';
+import { Input } from '../ui/input';
+import { Button } from '../ui/button';
 
 type SearchCategory = 'all' | 'albums' | 'artists' | 'latest';
 type Suggestion = {

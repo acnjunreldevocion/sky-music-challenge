@@ -1,8 +1,8 @@
 import { render, screen, fireEvent } from '@testing-library/react'
-import TrackList from '@/components/TrackList'
+import TrackList from '@/components/artists/TrackList'
 import { useAppDispatch, useAppSelector } from '@/hooks/redux'
 import { toggleFavorites } from '@/store/features/favoritesSlice'
-import { Entry } from '@/lib/types'
+import { Entry } from '@/lib/types/songs'
 
 jest.mock('@/hooks/redux', () => ({
   useAppDispatch: jest.fn(),

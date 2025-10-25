@@ -2,7 +2,7 @@
 
 import Image from 'next/image'
 import { Card } from '@/components/ui/card'
-import { Entry } from '@/lib/types'
+import { Entry } from '@/lib/types/songs'
 import Link from 'next/link'
 import { Star } from 'lucide-react'
 import { useMemo } from 'react'

@@ -24,13 +24,22 @@ const config: Config = {
   coveragePathIgnorePatterns: [
     '/node_modules/',
     '/.next/',
-    '/components/ui/', //
+    '/components/ui/',
+    '/lib/types/',
   ],
 
   // Coverage
   collectCoverage: true,
   coverageDirectory: 'coverage',
   coverageProvider: 'v8',
+  coverageThreshold: {
+    global: {
+      branches: 75,   // % of branches covered
+      functions: 75,  // % of functions covered
+      lines: 90,      // % of lines covered
+      statements: 75, // % of statements covered
+    },
+  },
 }
 
 export default config

@@ -1,5 +1,5 @@
 
-import { Entry } from "@/lib/types";
+import { Entry } from "@/lib/types/songs";
 import { createSlice, PayloadAction } from "@reduxjs/toolkit";
 
 interface Album {

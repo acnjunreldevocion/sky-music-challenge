@@ -1,10 +1,8 @@
-
-
 import { render, screen } from '@testing-library/react'
 import '@testing-library/jest-dom'
-import { Entry } from '@/lib/types'
-import HeroArtistAlbums from '@/components/ArtistAlbums'
+import { Entry } from '@/lib/types/songs'
 import { PLACEHOLDER_IMAGE } from '@/lib/constants'
+import HeroArtistAlbums from '@/components/artists/ArtistAlbums'
 
 // Mock Redux hooks
 const mockDispatch = jest.fn()
@@ -27,7 +25,7 @@ beforeEach(() => {
   mockSelector.mockReturnValue([]) // no favorites by default
 })
 
-describe('ArtistAlbum', () => {
+describe('HeroArtistAlbums Component', () => {
   const mockAlbums = [
     {
       id: { attributes: { 'im:id': '123' } },
@@ -54,7 +52,7 @@ describe('ArtistAlbum', () => {
   ] as unknown as Entry[]
 
   describe('Rendering', () => {
-    it('renders all albums in the grid', () => {
+    it('should render all albums in the grid', () => {
       render(<HeroArtistAlbums albums={mockAlbums} />)
 
       expect(screen.getByText('Album One')).toBeInTheDocument()
@@ -64,19 +62,19 @@ describe('ArtistAlbum', () => {
       expect(screen.getByText('$12.99')).toBeInTheDocument()
     })
 
-    it('returns null when albums array is empty', () => {
+    it('should return null when albums array is empty', () => {
       const { container } = render(<HeroArtistAlbums albums={[]} />)
       expect(container.firstChild).toBeNull()
     })
 
-    it('handles undefined albums prop gracefully', () => {
+    it('should handle undefined albums prop gracefully', () => {
       const { container } = render(<HeroArtistAlbums albums={undefined as unknown as Entry[]} />)
       expect(container.firstChild).toBeNull()
     })
   })
 
-  describe('Image optimization', () => {
-    it('renders optimized album cover images', () => {
+  describe('Image Optimization', () => {
+    it('should render optimized album cover images correctly', () => {
       render(<HeroArtistAlbums albums={mockAlbums} />)
 
       const images = screen.getAllByTestId('album-image')
@@ -91,7 +89,7 @@ describe('ArtistAlbum', () => {
       expect(images[1]).toHaveAttribute('alt', 'Album cover for Album Two')
     })
 
-    it('uses placeholder for missing album images', () => {
+    it('should maintain placeholder image when album image is missing', () => {
       const albumsWithMissingImage = [
         {
           ...mockAlbums[0],
@@ -107,50 +105,45 @@ describe('ArtistAlbum', () => {
   })
 
   describe('Accessibility', () => {
-    it('provides proper navigation links', () => {
+    it('should provide proper navigation links for each album', () => {
       render(<HeroArtistAlbums albums={mockAlbums} />)
 
       const links = screen.getAllByRole('link')
-      // there will be one link per album (wrapped), ensure hrefs are correct
       expect(links.find(l => (l as HTMLAnchorElement).getAttribute('href') === '/album/123')).toBeTruthy()
       expect(links.find(l => (l as HTMLAnchorElement).getAttribute('href') === '/album/124')).toBeTruthy()
 
-      // accessible name check (aria-label present on link)
       const link = screen.getByRole('link', { name: /View details for Album One/i })
       expect(link).toHaveAttribute('href', '/album/123')
       expect(link).toHaveAttribute('aria-label', 'View details for Album One')
     })
 
-    it('has proper focus indicators on links', () => {
+    it('should apply visible focus indicators on links', () => {
       render(<HeroArtistAlbums albums={mockAlbums} />)
 
       const link = screen.getByRole('link', { name: /View details for Album One/i })
       expect(link.className).toBeDefined()
-      // class presence is enough — component may not include all utilities in test DOM
     })
   })
 
-  describe('Layout and Grid', () => {
-    it('applies proper grid layout (data-testid present)', () => {
+  describe('Layout and Structure', () => {
+    it('should apply proper grid layout', () => {
       render(<HeroArtistAlbums albums={mockAlbums} />)
 
       const grid = screen.getByTestId('artist-album')
       expect(grid).toBeInTheDocument()
     })
 
-    it('applies proper card structure for each album', () => {
+    it('should render proper card structure for each album', () => {
       render(<HeroArtistAlbums albums={mockAlbums} />)
 
       const cards = screen.getAllByTestId('card')
       expect(cards).toHaveLength(2)
 
-      const firstCard = cards[0];
+      const firstCard = cards[0]
       const secondCard = cards[1]
 
-      // title and artist elements exist inside card
       expect(firstCard).toHaveTextContent('Album One')
       expect(secondCard).toHaveTextContent('Test Artist')
     })
-
   })
 })
