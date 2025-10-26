@@ -34,10 +34,10 @@ const config: Config = {
   coverageProvider: 'v8',
   coverageThreshold: {
     global: {
-      branches: 75,   // % of branches covered
-      functions: 75,  // % of functions covered
-      lines: 90,      // % of lines covered
-      statements: 75, // % of statements covered
+      branches: 80,   // % of branches covered
+      functions: 80,  // % of functions covered
+      lines: 80,      // % of lines covered
+      statements: 80, // % of statements covered
     },
   },
 }

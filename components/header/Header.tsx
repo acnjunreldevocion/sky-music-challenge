@@ -4,13 +4,11 @@
 import { HouseIcon } from "lucide-react"
 import Link from "next/link"
 import { useAppSelector } from "@/hooks/redux"
-import SearchBar from "./SearchBar"
 import Favorites from "../favorites/Favorites"
+import SearchBar from "./searchbar"
 
 const Header = () => {
-
   const entries = useAppSelector((items) => items.albums.items)
-
   return (
     <header className="sticky top-0 z-50 bg-background/80 backdrop-blur-sm border-b border-border" role="banner">
       <div className="container mx-auto flex h-16 items-center justify-between px-4 lg:px-8">

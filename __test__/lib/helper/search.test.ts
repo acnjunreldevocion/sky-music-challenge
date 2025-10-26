@@ -1,4 +1,5 @@
-import { buildSuggestionsManual, NormalizeAlbums } from "@/lib";
+import { buildSuggestionsManual } from "@/lib";
+import { NormalizeAlbums } from "@/lib/types/search";
 
 
 describe('buildSuggestionsManual (enhanced matching)', () => {

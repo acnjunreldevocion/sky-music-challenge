@@ -1,24 +1,6 @@
 // Enhanced built-in search with regex sequence matching and diacritics-insensitive normalization.
 // Keeps the original API: buildSuggestionsManual(albums, rawQuery, category, limit) => Suggestion[]
-import type { Entry } from '@/lib/types/songs';
-
-export type SearchCategory = 'all' | 'albums' | 'artists' | 'latest';
-export type Suggestion = {
-  id: string;
-  label: string;
-  category: SearchCategory;
-  data: Entry;
-};
-
-export type NormalizeAlbums = {
-  entry: Entry;
-  name: string;
-  artist: string;
-  year: number | string;
-  label: string;
-  id: string;
-  image: string;
-};
+import { NormalizeAlbums, SearchCategory, Suggestion } from '../types/search';
 
 function escapeRegExp(s: string) {
   return s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');

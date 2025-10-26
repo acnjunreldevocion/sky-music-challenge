@@ -1,146 +1,124 @@
-import { render, screen, waitFor, fireEvent } from '@testing-library/react';
-import userEvent from '@testing-library/user-event';
-import { Entry } from '@/lib/types/songs';
-import SearchBar from '@/components/header/SearchBar';
+import { render, screen, fireEvent } from '@testing-library/react'
+import { SuggestionsPopoverProps } from '@/components/header/searchbar/SuggestionsPopover'
+import SearchBar from '@/components/header/searchbar'
+import { CategoryPopoverProps } from '@/components/header/searchbar/CategoryPopover'
+import { Suggestion } from '@/lib/types/search'
 
-// Mock the debounce hook so debounced value is immediate in tests
+// Mock external deps
 jest.mock('@/hooks/useDebounce', () => ({
-  useDebounce: (value: () => void) => value,
-}));
+  useDebounce: (v: string) => v
+}))
 
-describe('SearchBar Component', () => {
-  const nowIso = new Date().toISOString();
-  const albums = [
-    {
-      id: { attributes: { 'im:id': '1' } },
-      'im:name': { label: 'Song One' },
-      'im:artist': { label: 'Artist A' },
-      'im:releaseDate': { label: nowIso },
-      'im:image': [{}, { label: 'https://example.com/img1.jpg' }],
-    },
-    {
-      id: { attributes: { 'im:id': '2' } },
-      'im:name': { label: 'Old Song' },
-      'im:artist': { label: 'Artist B' },
-      'im:releaseDate': { label: '2000-01-01T00:00:00Z' },
-      'im:image': [{}, { label: 'https://example.com/img2.jpg' }],
-    },
-  ] as unknown as Entry[];
+jest.mock('@/lib', () => ({
+  buildSuggestionsManual: jest.fn(() => [
+    { id: '1', label: 'Mock Album - Mock Artist', category: 'albums' }
+  ])
+}))
 
-  it('should open category dropdown and apply selected category to Filter button', async () => {
-    const user = userEvent.setup();
-    render(<SearchBar albums={albums} />);
+// Mock child components
+jest.mock('@/components/header/searchbar/CategoryPopover', () => ({
+  __esModule: true,
+  default: ({ activeCategory, handleCategorySelect }: CategoryPopoverProps) => (
+    <button
+      aria-label="Select category"
+      data-testid="category-button"
+      onClick={() => handleCategorySelect('albums')}
+    >
+      {activeCategory}
+    </button>
+  ),
+}))
 
-    const filterButton = screen.getByRole('button', { name: /select category/i });
-    expect(filterButton).toHaveTextContent(/all/i);
+jest.mock('@/components/header/searchbar/SuggestionsPopover', () => ({
+  __esModule: true,
+  default: ({
+    handleSelect,
+    handleClear,
+  }: SuggestionsPopoverProps) => (
+    <div>
+      <button onClick={() => handleSelect({ label: 'Mock Album - Mock Artist', category: 'albums' } as unknown as Suggestion)}>
+        Select suggestion
+      </button>
+      <button onClick={handleClear}>Clear</button>
+    </div>
+  ),
+}))
 
-    await user.click(filterButton);
-    const artistsButton = await screen.findByRole('menuitem', { name: /artists/i });
-    await user.click(artistsButton);
+describe('SearchBar', () => {
+  const mockOnSearch = jest.fn()
 
-    expect(filterButton).toHaveTextContent(/artists/i);
-  });
+  beforeEach(() => {
+    jest.clearAllMocks()
+  })
 
-  it('should display category chips with counts and apply filtering when switching categories', async () => {
-    const user = userEvent.setup();
-    render(<SearchBar albums={albums} />);
+  test('renders input and placeholder correctly', () => {
+    render(<SearchBar onSearch={mockOnSearch} placeholder="Search..." />)
+    const input = screen.getByPlaceholderText('Search...')
+    expect(input).toBeInTheDocument()
+  })
 
-    const input = screen.getByPlaceholderText(/Search albums, artists, latest/i);
-    await user.type(input, 'song');
+  test('updates search value on input change', () => {
+    render(<SearchBar onSearch={mockOnSearch} />)
+    const input = screen.getByRole('combobox')
+    fireEvent.change(input, { target: { value: 'mock' } })
+    expect(input).toHaveValue('mock')
+  })
 
-    await waitFor(() => expect(screen.getByText('Song One')).toBeInTheDocument());
+  test('handles Enter key and triggers search', () => {
+    render(<SearchBar onSearch={mockOnSearch} />)
+    const input = screen.getByRole('combobox')
+    fireEvent.change(input, { target: { value: 'mock album' } })
+    fireEvent.keyDown(input, { key: 'Enter' })
+    expect(mockOnSearch).toHaveBeenCalledWith('mock album', 'all')
+  })
 
-    const latestChip = screen.getByRole('button', { name: /latest\s*\(1\)/i });
-    await user.click(latestChip);
+  test('handles Escape key and closes popover', () => {
+    render(<SearchBar onSearch={mockOnSearch} />)
+    const input = screen.getByRole('combobox')
+    fireEvent.focus(input)
+    fireEvent.keyDown(input, { key: 'Escape' })
+    expect(input).toHaveAttribute('aria-expanded', 'false')
+  })
 
-    await waitFor(() => {
-      expect(screen.queryByText('Old Song')).not.toBeInTheDocument();
-      expect(screen.getByText('Song One')).toBeInTheDocument();
-    });
-  });
+  test('handles suggestion selection and triggers search', () => {
+    render(<SearchBar onSearch={mockOnSearch} />)
+    const input = screen.getByRole('combobox')
 
-  it('should clear the input and hide popover when clear button is clicked', async () => {
-    const user = userEvent.setup();
-    render(<SearchBar albums={albums} />);
+    fireEvent.change(input, { target: { value: 'mock' } })
+    const suggestion = screen.getByText('Select suggestion')
+    fireEvent.click(suggestion)
 
-    const input = screen.getByPlaceholderText(/Search albums, artists, latest/i);
-    await user.type(input, 'song');
+    expect(mockOnSearch).toHaveBeenCalledWith('Mock Album - Mock Artist', 'albums')
+  })
 
-    const clearBtn = await screen.findByRole('button', { name: /clear search/i });
-    await user.click(clearBtn);
+  test('handles clear button click', () => {
+    render(<SearchBar onSearch={mockOnSearch} />)
+    const input = screen.getByRole('combobox')
 
-    expect((input as HTMLInputElement).value).toBe('');
-    await waitFor(() => expect(screen.queryByText('Song One')).not.toBeInTheDocument());
-  });
+    // Enter text
+    fireEvent.change(input, { target: { value: 'mock' } })
 
-  it('should trigger onSearch callback when a suggestion item is selected', async () => {
-    const user = userEvent.setup();
-    const onSearch = jest.fn();
-    render(<SearchBar albums={albums} onSearch={onSearch} />);
+    // Click clear (mocked in SuggestionsPopover)
+    const clearBtn = screen.getByText('Clear')
+    fireEvent.click(clearBtn)
 
-    const input = screen.getByPlaceholderText(/Search albums, artists, latest/i);
-    await user.type(input, 'song');
+    expect(input).toHaveValue('')
+  })
 
-    await waitFor(() => expect(screen.getByText('Song One')).toBeInTheDocument());
+  test('changes category via CategoryPopover and triggers search', () => {
+    render(<SearchBar onSearch={mockOnSearch} />)
+    const categoryButton = screen.getByRole('button', { name: /select category/i })
 
-    const listItem = screen.getByText('Song One').closest('li');
-    await user.click(listItem as HTMLElement);
+    // Should trigger handleCategorySelect('albums')
+    fireEvent.click(categoryButton)
 
-    await waitFor(() => {
-      expect(onSearch).toHaveBeenCalledWith('Song One - Artist A', 'all');
-    });
-  });
+    // Type a search term
+    const input = screen.getByRole('combobox')
+    fireEvent.change(input, { target: { value: 'mock album' } })
 
-  it('should trigger onSearch when Enter key is pressed with current input and category', async () => {
-    const user = userEvent.setup();
-    const onSearch = jest.fn();
-    render(<SearchBar albums={albums} onSearch={onSearch} />);
+    // Press Enter to trigger onSearch with new category
+    fireEvent.keyDown(input, { key: 'Enter' })
+    expect(mockOnSearch).toHaveBeenCalledWith('mock album', 'albums')
+  })
 
-    const input = screen.getByPlaceholderText(/Search albums, artists, latest/i);
-    await user.type(input, 'Artist A{Enter}');
-
-    await waitFor(() => {
-      expect(onSearch).toHaveBeenCalledWith('Artist A', 'all');
-    });
-  });
-
-  it('should close popover and category menu when Escape key is pressed', async () => {
-    const user = userEvent.setup();
-    render(<SearchBar albums={albums} />);
-
-    const input = screen.getByPlaceholderText(/Search albums, artists, latest/i);
-    await user.type(input, 'song');
-    await waitFor(() => expect(screen.getByText('Song One')).toBeInTheDocument());
-
-    const filterToggle = screen.getByRole('button', { name: /select category/i });
-    await user.click(filterToggle);
-    await screen.findByRole('menuitem', { name: /artists/i });
-
-    fireEvent.keyDown(document, { key: 'Escape', code: 'Escape' });
-
-    await waitFor(() => {
-      expect(screen.queryByText('Song One')).not.toBeInTheDocument();
-      expect(screen.queryByRole('menuitem', { name: /artists/i })).not.toBeInTheDocument();
-    });
-  });
-
-  it('should close popover and category menu when clicking outside', async () => {
-    const user = userEvent.setup();
-    render(<SearchBar albums={albums} />);
-
-    const input = screen.getByPlaceholderText(/Search albums, artists, latest/i);
-    await user.type(input, 'song');
-    await waitFor(() => expect(screen.getByText('Song One')).toBeInTheDocument());
-
-    const filterToggle = screen.getByRole('button', { name: /select category/i });
-    await user.click(filterToggle);
-    await screen.findByRole('menuitem', { name: /artists/i });
-
-    fireEvent.pointerDown(document.body);
-
-    await waitFor(() => {
-      expect(screen.queryByText('Song One')).not.toBeInTheDocument();
-      expect(screen.queryByRole('menuitem', { name: /artists/i })).not.toBeInTheDocument();
-    });
-  });
-});
+})
